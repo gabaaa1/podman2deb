@@ -1,0 +1,16 @@
+{
+    "alias": "podman2deb",
+    "authors": [
+        "Gabriel Auger"
+    ],
+    "deps": [],
+    "description": "Create a debian package from Podman Sources.",
+    "filen_main": "main.py",
+    "installer": "gpm",
+    "licenses": [
+        "MIT"
+    ],
+    "name": "Podman2deb",
+    "uuid4": "146aff78-446e-44cf-aef5-07f2452e2d30",
+    "version": "1.0.0"
+}

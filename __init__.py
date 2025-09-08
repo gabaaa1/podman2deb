@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+# authors: Gabriel Auger
+# name: Podman2deb
+# licenses: MIT 
+__version__ = "1.0.0"
+
+# from .dev.podman2deb import podman2deb
+# from .gpkgs import message as msg
+# from .gpkgs.nargs import Nargs
+# from .gpkgs.etconf import Etconf
