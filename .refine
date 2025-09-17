@@ -10,3 +10,7 @@ __pycache__/
 /todo.txt
 nargs-cache.json
 nargs-cache.pickle
+/assets/
+/builds/
+/pkg/
+/sources/

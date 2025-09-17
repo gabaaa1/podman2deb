@@ -1,2 +1,18 @@
 args:
   _examples:
+  build:
+    tag:
+      _info: Provides podman version to build i.e. v5.6.1
+      _type: str
+  clean:
+    _info: Clean all build folders
+  build_info:
+    _info: Output information for all the packages to be build with their git repository and tag version
+    tag:
+      _info: Provides podman version to show build info i.e. v5.6.1
+      _type: str
+    _info:
+  list_tags:
+    _info: List all Podman tags.
+  update:
+    _info: Clone repositories or fetch repositories tags
