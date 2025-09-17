@@ -8,7 +8,7 @@
         "89d8676a-6b02-43fa-8694-e97de5680cd0|nargs|5.1.2|gpm",
         "f04cc623-1abb-4b04-ab90-58df25c24939|semver|1.5.0|gpm",
         "df328dbe-54ab-4a6d-b7a2-932b0eaee30a|shell_helpers|5.4.2|gpm",
-        "8bac1b6e-c544-4b94-8233-dacd9949cc1e|sudo|1.1.1|gpm"
+        "8bac1b6e-c544-4b94-8233-dacd9949cc1e|sudo|1.1.2|gpm"
     ],
     "description": "Create a debian package from Podman Sources.",
     "filen_main": "main.py",
@@ -17,7 +17,7 @@
         "MIT"
     ],
     "name": "Podman2deb",
-    "timestamp": 1758080835.941864,
+    "timestamp": 1758082971.5890906,
     "uuid4": "146aff78-446e-44cf-aef5-07f2452e2d30",
     "version": "1.0.0"
 }

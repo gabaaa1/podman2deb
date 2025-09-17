@@ -19,7 +19,7 @@ depends:
   - make
   - pkg-config
   - uidmap
-package: debpodman
+package: podman2deb
 architecture: ""
 version: ""
 section: admin
