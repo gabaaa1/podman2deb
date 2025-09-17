@@ -50,7 +50,7 @@ def setup_go(
     direpa_go_bin=os.path.join(direpa_go, "bin")
     allpaths=os.environ["PATH"].split(":")
     if direpa_go_bin not in allpaths:
-        os.environ["PATH"]=f"{direpa_go_bin}:{os.environ["PATH"]}"
+        os.environ["PATH"]=f'{direpa_go_bin}:{os.environ["PATH"]}'
 
 
     tmppath=tempfile.TemporaryDirectory()
@@ -160,7 +160,8 @@ def add_conf(
                 with open(file_dst, "w") as g:
                     g.write(f.read())
                     if filen_conf == "registryconf":
-                        g.write(f"unqualified-search-registries=[\"{"\", \"".join(info.registries)}\"]")
+                        text_registries='\", \"'.join(info.registries)
+                        g.write(f'unqualified-search-registries=["{text_registries}"]')
             sudo.enable()
             shell.cmd_prompt(["sudo", "chown", "root:root", file_dst])
 

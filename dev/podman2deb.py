@@ -205,7 +205,7 @@ Homepage: {info.homepage}
 """)
         
     os.makedirs(direpa_builds, exist_ok=True)
-    filenpa_deb=os.path.join(direpa_builds, f"debpodman-{info.architecture}-{info.version}.deb")
+    filenpa_deb=os.path.join(direpa_builds, f"podman2deb-{info.architecture}-{info.version}.deb")
     shell.cmd_prompt(["dpkg-deb", "-b", direpa_pkg, filenpa_deb])
 
 def set_repo(
