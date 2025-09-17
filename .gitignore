@@ -1,0 +1,17 @@
+__pycache__/
+.env/
+.pytest_cache/
+.vscode
+*.pyc
+modules/
+gpkgs/
+/.etconf/
+/todo.txt
+nargs-cache.json
+nargs-cache.pickle
+/pkg
+/sources
+/assets
+/builds
+
+

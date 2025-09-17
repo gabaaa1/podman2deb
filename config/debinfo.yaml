@@ -1,0 +1,79 @@
+depends:
+  - btrfs-progs
+  - gcc
+  - git
+  - go-md2man
+  - iptables
+  - libassuan-dev
+  - libbtrfs-dev
+  - libc6-dev
+  - libdevmapper-dev
+  - libglib2.0-dev
+  - libgpgme-dev
+  - libgpg-error-dev
+  - libprotobuf-dev
+  - libprotobuf-c-dev
+  - libseccomp-dev
+  - libselinux1-dev
+  - libsystemd-dev
+  - make
+  - pkg-config
+  - uidmap
+package: debpodman
+architecture: ""
+version: ""
+section: admin
+maintainer: gabaaa.dev@gmail.com
+priority: optional
+homepage: https://github.com/containers/podman
+description: |
+  engine to run OCI-based containers in Pods
+   Podman is an engine for running OCI-based containers in Pods.
+   Podman provides a CLI interface for managing Pods, Containers, and
+   Container Images.
+   .
+   At a high level, the scope of libpod and podman is the following:
+    * Support multiple image formats including the OCI and Docker image
+      formats.
+    * Support for multiple means to download images including trust & image
+      verification.
+    * Container image management (managing image layers, overlay filesystems,
+      etc).
+    * Full management of container lifecycle.
+    * Support for pods to manage groups of containers together.
+    * Resource isolation of containers and pods.
+    * Support for a Docker-compatible CLI interface through Podman.
+   .
+   Podman is a daemon-less alternative to Docker.
+repos:
+  - name: podman
+    giturl: https://github.com/containers/podman
+    prefix: v
+  - name: runc
+    giturl: https://github.com/opencontainers/runc.git
+    prefix: v
+  - name: conmon
+    giturl: https://github.com/containers/conmon
+    prefix: v
+  - name: passt
+    giturl: git://passt.top/passt
+  - name: netavark
+    giturl: https://github.com/containers/netavark.git
+    prefix: v
+  - name: aardvark_dns
+    giturl: https://github.com/containers/aardvark-dns.git
+    prefix: v
+  - name: go
+    giturl: https://github.com/golang/go.git
+    prefix: go
+    download: https://go.dev/dl
+  - name: image
+    giturl: https://github.com/containers/image.git
+    prefix: v
+  - name: slirp4netns
+    giturl: https://github.com/rootless-containers/slirp4netns
+    prefix: v
+registries:
+  - registry.access.redhat.com
+  - registry.fedoraproject.org
+  - docker.io
