@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 from contextlib import contextmanager
 import os
+from re import sub
 import sys
 import subprocess
 import requests
 import shutil
 import tarfile
 import tempfile
-
 
 from .models import Debinfo, Repo
 
@@ -82,10 +82,18 @@ def install_conmon(
         assert(conmon_repo.path is not None)
         msg.info(f"At path {conmon_repo.path}")
         os.chdir(conmon_repo.path)
-        shell.cmd_prompt(["git", "checkout", conmon_repo.tag])
+        checkout(conmon_repo)
         if clean is True:
             shell.cmd_prompt(["make", "clean"])
         shell.cmd_prompt(["make"])
+        if os.path.exists(os.path.join(conmon_repo.path, "tools")):
+            stdout, stderr=subprocess.Popen(["make", "install.tools"], stderr=subprocess.PIPE).communicate()
+            if stderr is not None:
+                stderr=stderr.decode().strip()
+                if len(stderr) > 0:
+                    if "No rule to make target 'install.tools'" not in stderr:
+                        if "Nothing to be done for 'all'" not in stderr:
+                            raise Exception(stderr)
         sudo.enable()
         shell.cmd_prompt(["sudo", "-E", "make", "podman"])
         md2man=shutil.which("go-md2man")
@@ -104,7 +112,7 @@ def install_passt(
     assert(repo.path is not None)
     msg.info(f"At path {repo.path}")
     os.chdir(repo.path)
-    shell.cmd_prompt(["git", "checkout", repo.tag])
+    checkout(repo)
     if clean is True:
         shell.cmd_prompt(["make", "clean"])
     shell.cmd_prompt(["make"])
@@ -125,7 +133,7 @@ def install_runc(
         assert(runc_repo.path is not None)
         msg.info(f"At path {runc_repo.path}")
         os.chdir(runc_repo.path)
-        shell.cmd_prompt(["git", "checkout", runc_repo.tag])
+        checkout(runc_repo)
         if clean is True:
             shell.cmd_prompt(["make", "clean"])
         shell.cmd_prompt(["make", "BUILDTAGS=selinux apparmor seccomp"])
@@ -168,29 +176,55 @@ def add_conf(
             with open(filenpa_conffiles, "a") as f:
                 f.write(f"/etc/containers/{filen_conf}\n")
 
-def test_rust():
+def set_rust(direpa_repo:str, rust_tag:str):
     if shutil.which("cargo") is None:
         raise Exception("""Rust needs to be installed on your system:
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
             . "$HOME/.cargo/env"
-        """)    
+        """)
+    
+    os.chdir(direpa_repo)
+    shell.cmd_prompt(["rustup", "override", "set", rust_tag])
+    shell.cmd_prompt(["rustc", "--version"])
+
+def install_mandown(
+    repo:Repo,
+    direpa_pkg:str,
+    clean:bool=False,
+):
+    title(repo.name)
+    os.environ["DESTDIR"]=direpa_pkg
+    assert(repo.path is not None)
+    msg.info(f"At path {repo.path}")
+    os.chdir(repo.path)
+    checkout(repo)
+    if clean is True:
+        subprocess.Popen(["make", "clean"]).communicate()
+    shell.cmd_prompt(["make"])
+    filenpa_mdn=os.path.join(repo.path, "mdn")
+    shell.cmd_prompt(["chmod", "+x", filenpa_mdn])
+    return filenpa_mdn
 
 def install_netavark(
     repo:Repo,
     direpa_pkg:str,
     sudo:Sudo,
+    rust_tag:str,
+    filenpa_mandown:str,
     clean:bool=False,
 ):
     title(repo.name)
-    test_rust()
-    os.environ["DESTDIR"]=direpa_pkg
     assert(repo.path is not None)
+    set_rust(repo.path, rust_tag)
+    os.environ["DESTDIR"]=direpa_pkg
+    os.environ["MANDOWN"]=filenpa_mandown
     msg.info(f"At path {repo.path}")
     os.chdir(repo.path)
-    shell.cmd_prompt(["git", "checkout", repo.tag])
+    checkout(repo)
     if clean is True:
         shell.cmd_prompt(["make", "clean"])
     shell.cmd_prompt(["make"])
+    shell.cmd_prompt(["make", "docs"])
     sudo.enable()
     shell.cmd_prompt(["sudo", "-E", "make", "install"])
 
@@ -198,15 +232,19 @@ def install_aardvark_dns(
     repo:Repo,
     direpa_pkg:str,
     sudo:Sudo,
+    rust_tag:str,
+    filenpa_mandown:str,
     clean:bool=False,
 ):
     title(repo.name)
-    test_rust()
-    os.environ["DESTDIR"]=direpa_pkg
     assert(repo.path is not None)
+    set_rust(repo.path, rust_tag)
+    os.environ["DESTDIR"]=direpa_pkg
+    os.environ["MANDOWN"]=filenpa_mandown
     msg.info(f"At path {repo.path}")
     os.chdir(repo.path)
-    shell.cmd_prompt(["git", "checkout", repo.tag])
+    checkout(repo)
+
     if clean is True:
         subprocess.Popen(["make", "clean"]).communicate()
     shell.cmd_prompt(["make"])
@@ -258,9 +296,18 @@ def install_podman(
         assert(podman_repo.path is not None)
         msg.info(f"At path {podman_repo.path}")
         os.chdir(podman_repo.path)
-        shell.cmd_prompt(["git", "checkout", podman_repo.tag])
+        checkout(podman_repo)
         if clean is True:
             shell.cmd_prompt(["make", "clean"])
         shell.cmd_prompt(["make", "BUILDTAGS=exclude_graphdriver_devicemapper apparmor selinux seccomp systemd"])
         sudo.enable()
         shell.cmd_prompt(["sudo", "-E", "make", "install"])
+
+def checkout(repo:Repo):
+    stdout, stderr=subprocess.Popen(["git", "describe", "--exact-match", "--tags"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+    current_tag:str|None=None
+    if stdout is not None:
+        current_tag=stdout.decode().strip()
+    if current_tag != repo.tag:
+        shell.cmd_prompt(["git", "clean", "-fd"])
+        shell.cmd_prompt(["git", "checkout", repo.tag])

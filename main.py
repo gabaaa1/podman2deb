@@ -65,6 +65,7 @@ if __name__ == "__main__":
             direpa_pkg=direpa_pkg,
             direpa_assets=direpa_assets,
             info=info,    
+            sudo=sudo,
         )
 
     if args.list_tags._here:

@@ -73,6 +73,11 @@ repos:
   - name: slirp4netns
     giturl: https://github.com/rootless-containers/slirp4netns
     prefix: v
+  - name: rust
+    giturl: https://github.com/rust-lang/rust/
+  - name: mandown
+    giturl: https://github.com/Titor8115/mandown.git
+    prefix: v
 registries:
   - registry.access.redhat.com
   - registry.fedoraproject.org
