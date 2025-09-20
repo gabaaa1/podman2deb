@@ -63,6 +63,9 @@ sudo dpkg -i builds/Podman2deb-amd64-5.6.1.deb
 sudo apt --fix-broken install
 ```
 
-Podman v5.6.1 seems to work fine on Debian Bookworm. I couldn't manage to compile older Podman versions, the build breaks at netavark package each time.
-
 `Podman2deb-amd64-5.6.1.deb` is available in the releases section. 
+
+To remove podman do:
+```shell
+sudo apt remove podman2deb
+```

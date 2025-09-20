@@ -15,6 +15,8 @@ class RepoName(StrEnum):
     GO=auto()
     IMAGE=auto()
     SLIRP4NETNS=auto()
+    RUST=auto()
+    MANDOWN=auto()
 
 @dataclass
 class Repos:
@@ -27,6 +29,8 @@ class Repos:
     go:"Repo"
     image:"Repo"
     slirp4netns:"Repo"
+    rust:"Repo"
+    mandown:"Repo"
 
 @dataclass
 class Debinfo:

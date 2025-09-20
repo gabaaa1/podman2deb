@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pprint import pprint
+import hashlib
 import requests
 import tarfile
 import json
@@ -13,8 +14,10 @@ from dataclasses import asdict
 import platform
 from contextlib import contextmanager
 
+from src.gpkgs.semver.dev.semver import NotSemanticVersion
 
-from .install_deps import add_conf, install_aardvark_dns, install_conmon, install_netavark, install_passt, install_podman, install_runc, install_slirp4netns, setup_go
+
+from .install_deps import add_conf, install_aardvark_dns, install_conmon, install_mandown, install_netavark, install_passt, install_podman, install_runc, install_slirp4netns, setup_go
 
 from ..dev.models import Debinfo, RepoName as er, Repo, Repos
 
@@ -45,14 +48,16 @@ def get_repos(
 
     commit_time=get_commit_time(repos.podman, repos.podman.tag)
     repos.podman.date=commit_time
-    repos.runc.tag=get_closest_tag(repos.runc, commit_time)
-    repos.conmon.tag=get_closest_tag(repos.conmon, commit_time)
-    repos.passt.tag=get_closest_tag(repos.passt, commit_time)
-    repos.netavark.tag=get_closest_tag(repos.netavark, commit_time)
-    repos.aardvark_dns.tag=get_closest_tag(repos.aardvark_dns, commit_time)
-    repos.go.tag=get_closest_tag(repos.go, commit_time)
-    repos.image.tag=get_closest_tag(repos.image, commit_time)
-    repos.slirp4netns.tag=get_closest_tag(repos.slirp4netns, commit_time)
+    repos.runc.tag=get_closest_tag(repos.runc, commit_time, trigger_error=False)
+    repos.conmon.tag=get_closest_tag(repos.conmon, commit_time, trigger_error=False)
+    repos.passt.tag=get_closest_tag(repos.passt, commit_time, trigger_error=False)
+    repos.netavark.tag=get_closest_tag(repos.netavark, commit_time, trigger_error=False)
+    repos.aardvark_dns.tag=get_closest_tag(repos.aardvark_dns, commit_time, trigger_error=False)
+    repos.go.tag=get_closest_tag(repos.go, commit_time, trigger_error=True)
+    repos.image.tag=get_closest_tag(repos.image, commit_time, trigger_error=False)
+    repos.slirp4netns.tag=get_closest_tag(repos.slirp4netns, commit_time, trigger_error=False)
+    repos.rust.tag=get_closest_tag(repos.rust, commit_time, trigger_error=True)
+    repos.mandown.tag=get_closest_tag(repos.mandown, commit_time, trigger_error=False)
 
     print_obj=dict()
     for key, value in drs.items():
@@ -65,7 +70,9 @@ def clean(
     direpa_assets:str,
     direpa_pkg:str,
     info:Debinfo,
+    sudo:Sudo,
 ):
+    sudo.enable()
     if os.path.exists(direpa_pkg):
         shell.cmd_prompt(["sudo", "rm", "-r", direpa_pkg])
 
@@ -103,6 +110,24 @@ def build_info(
 
     print(dump)
 
+def generate_md5sums(direpa_pkg):
+    # md5sums
+    # 99f31c0169430fae0c2a850a9ee9f1aa  usr/bin/podman
+    filenpa_md5=os.path.join(direpa_pkg, "DEBIAN", "md5sums")
+    direpa_usr=os.path.join(direpa_pkg, "usr")
+    total_size = 0
+    with open(filenpa_md5, "w") as f:
+        for root, dirs, files in os.walk(direpa_usr):
+            for elem in sorted(files):
+                filenpa_usr=os.path.join(root, elem)
+                if not os.path.islink(filenpa_usr):
+                    total_size += os.stat(filenpa_usr).st_blocks * 512;
+                short_path=os.path.relpath(filenpa_usr, direpa_pkg)
+                with open(filenpa_usr, 'rb') as file_to_check:
+                    data = file_to_check.read()
+                    data_md5 = hashlib.md5(data).hexdigest()
+                    f.write(f"{data_md5}  {short_path}\n")
+    return int(total_size / 1024)
 
 
 def build(
@@ -140,41 +165,61 @@ def build(
         sudo=sudo,
         info=info,
     )
-    install_netavark(
-        repo=repos.netavark,
-        sudo=sudo,
-        direpa_pkg=direpa_pkg,
-    )
-    install_aardvark_dns(
-        repo=repos.aardvark_dns,
-        sudo=sudo,
-        direpa_pkg=direpa_pkg,
-    )
-    install_conmon(
-        go_repo=repos.go,
-        conmon_repo=repos.conmon,
-        direpa_assets=direpa_assets,
-        sudo=sudo,
-        direpa_pkg=direpa_pkg,
-    )
-    install_passt(
-        repo=repos.passt,
-        sudo=sudo,
-        direpa_pkg=direpa_pkg,
-    )
-    install_runc(
-        go_repo=repos.go,
-        runc_repo=repos.runc,
-        direpa_assets=direpa_assets,
-        sudo=sudo,
-        direpa_pkg=direpa_pkg,
-    )
-    install_slirp4netns(
-        repo=repos.slirp4netns,
-        direpa_assets=direpa_assets,
-        sudo=sudo,
-        direpa_pkg=direpa_pkg,
-    )
+
+
+    if repos.mandown.tag is not None:
+        filenpa_mandown=install_mandown(
+            repo=repos.mandown,
+            direpa_pkg=direpa_pkg,
+        )
+        assert(repos.rust.tag is not None)
+
+        if repos.netavark.tag is not None:
+            install_netavark(
+                repo=repos.netavark,
+                sudo=sudo,
+                direpa_pkg=direpa_pkg,
+                rust_tag=repos.rust.tag,
+                filenpa_mandown=filenpa_mandown,
+            )
+        if repos.aardvark_dns.tag is not None:
+            install_aardvark_dns(
+                repo=repos.aardvark_dns,
+                sudo=sudo,
+                direpa_pkg=direpa_pkg,
+                rust_tag=repos.rust.tag,
+                filenpa_mandown=filenpa_mandown,
+            )
+
+    if repos.conmon.tag is not None:
+        install_conmon(
+            go_repo=repos.go,
+            conmon_repo=repos.conmon,
+            direpa_assets=direpa_assets,
+            sudo=sudo,
+            direpa_pkg=direpa_pkg,
+        )
+    if repos.passt.tag is not None:
+        install_passt(
+            repo=repos.passt,
+            sudo=sudo,
+            direpa_pkg=direpa_pkg,
+        )
+    if repos.runc.tag is not None:
+        install_runc(
+            go_repo=repos.go,
+            runc_repo=repos.runc,
+            direpa_assets=direpa_assets,
+            sudo=sudo,
+            direpa_pkg=direpa_pkg,
+        )
+    if repos.slirp4netns.tag is not None:
+        install_slirp4netns(
+            repo=repos.slirp4netns,
+            direpa_assets=direpa_assets,
+            sudo=sudo,
+            direpa_pkg=direpa_pkg,
+        )
     install_podman(
         go_repo=repos.go,
         podman_repo=repos.podman,
@@ -191,6 +236,7 @@ def build(
     architecture=shell.cmd_get_value(["dpkg", "--print-architecture"])
     assert(architecture is not None)
     info.architecture=architecture
+    installed_size=generate_md5sums(direpa_pkg)
 
     with open(filenpa_control, "w") as f:
         f.write(f"""Package: {info.package}
@@ -199,6 +245,7 @@ Version: {info.version}
 Section: {info.section}
 Maintainer: {info.maintainer}
 Priority: {info.priority}
+Installed-Size: {installed_size}
 Description: {info.description.strip()}
 Depends: {", ".join(info.depends)}
 Homepage: {info.homepage}
@@ -222,7 +269,10 @@ def set_repo(
             shell.cmd_prompt(["git", "fetch", "--tags"])
     else:
         msg.info(f"Repo '{repo.name}' at '{repo.giturl}'")
-        shell.cmd_prompt(["git", "clone", repo.giturl, direpa_repo])
+        if repo.name in [er.GO, er.RUST]:
+            shell.cmd_prompt(["git", "clone", repo.giturl, direpa_repo])
+        else:
+            shell.cmd_prompt(["git", "clone", "--recurse-submodules", repo.giturl, direpa_repo])
 
 def get_commit_time(repo:Repo, tag:str):
     assert(repo.path is not None)
@@ -257,7 +307,7 @@ def get_latest_tag(repo:Repo):
             
     raise Exception(f"No latest tag found at repo {repo.name}.")
 
-def get_closest_tag(repo:Repo, commit_time:datetime):
+def get_closest_tag(repo:Repo, commit_time:datetime, trigger_error:bool=False):
     assert(repo.path is not None)
     os.chdir(repo.path)
     output=shell.cmd_get_value([
@@ -273,24 +323,41 @@ def get_closest_tag(repo:Repo, commit_time:datetime):
             if tmp_time <= commit_time:
                 repo.date=tmp_time
                 return t
-        pprint(tags)
-        raise Exception(f"No closest tag found at repo {repo.name} for time {commit_time}")
+        if trigger_error is True:
+            pprint(tags)
+            raise Exception(f"No closest tag found at repo {repo.name} for time {commit_time}")
+        else:
+            return None
+    elif repo.name == er.MANDOWN:
+        tmp_tags=[]
+        for t in tags:
+            elems=t.split(".")
+            if len(elems) > 3:
+                elem=".".join(elems[:3])+"+"+elems[3]
+                tmp_tags.append(elem)
+            else:
+                tmp_tags.append(t)
+
+        versions=semver(tmp_tags, flatten=True, no_duplicates=True, skip_error=True, prefix=repo.prefix)
+        versions=[v.replace("+", ".") for v in versions]
 
     else:
         versions=semver(tags, flatten=True, no_duplicates=True, skip_error=True, prefix=repo.prefix)
         versions.reverse()
 
-
     for v in versions:
-        obj=SemVer(v, prefix=repo.prefix)
-        if obj.pre == "":
+        if "+" not in v:
             tag=v
             tmp_time=get_commit_time(repo, tag)
-            repo.date=tmp_time
             if tmp_time <= commit_time:
+                repo.date=tmp_time
                 return tag
-    pprint(versions)
-    raise Exception(f"No closest tag found at repo {repo.name} for time {commit_time}")
+
+    if trigger_error is True:
+        pprint(versions)
+        raise Exception(f"No closest tag found at repo {repo.name} for time {commit_time}")
+    else:
+        return None
 
 def list_tags(
     direpa_sources:str,
