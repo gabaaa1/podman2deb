@@ -2,7 +2,7 @@
 # authors: Gabriel Auger
 # name: Podman2deb
 # licenses: MIT 
-__version__= "1.1.0"
+__version__= "1.1.1"
 
 from .dev.podman2deb import build, list_tags, clean, update, build_info
 from .dev.models import Debinfo, Repo, RepoName

@@ -346,7 +346,7 @@ def get_closest_tag(repo:Repo, commit_time:datetime, trigger_error:bool=False):
         versions.reverse()
 
     for v in versions:
-        if "+" not in v:
+        if "-" not in v:
             tag=v
             tmp_time=get_commit_time(repo, tag)
             if tmp_time <= commit_time:
